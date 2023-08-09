@@ -1,25 +1,42 @@
-const express = require('express');
-const { MongoClient } = require('mongodb');
+import express from 'express';
+import bodyParser  from 'body-parser';
+
+
+var temperature = 0;
+var humidity = 0
+
 
 const app = express();
-const port = 3000;
+const PORT = process.env.PORT || 5000;
 
-// MongoDB connection string
-const url = 'mongodb://localhost:27017';
-const dbName = 'TestDatabase';
+app.use(bodyParser.urlencoded({ extended: true }));
+app.use(bodyParser.json());
 
-MongoClient.connect(url, { useUnifiedTopology: true }, (err, client) => {
-  if (err) {
-    console.error('Error connecting to MongoDB:', err);
-    return;
+app.get('/', (req, res) => { res.send(`temp: ${temperature} humi ${humidity}`); });
+
+app.get('/data', async (req, res) => {
+  const number = req.query.number;
+
+  if (!number) {
+    return res.status(400).json({ error: 'number parameter is missing' });
   }
 
-  console.log('Connected to MongoDB successfully');
-
-  const db = client.db(dbName);
-
-  // Start your server here
-  app.listen(port, () => {
-    console.log(`Server running on http://localhost:${port}`);
-  });
+  try {
+    const numberData = number;
+    if (!numberData) {
+      return res.status(500).json({ error: 'number data not available' });
+    }
+    res.status(200).json(numberData);
+  } catch (error) {
+    res.status(500).json({ error: 'Failed to fetch number data' });
+  }
 });
+
+app.post('/update', (req, res) => {
+  temperature = req.body.temperature
+  humidity = req.body.humidity
+  console.log(`temp: ${temperature} humi ${humidity}`);
+  res.status(200).json({ message: `updated` });
+});
+
+app.listen(PORT, () => console.log(`Connected to ${PORT}`));
